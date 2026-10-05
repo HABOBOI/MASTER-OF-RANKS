@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MASTER OF RANK</title><meta name="theme-color" content="#070b1a"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes">
+<script>try{const ic='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#3b82f6"/><text x="32" y="44" font-size="34" font-weight="900" text-anchor="middle" fill="#fff">x²</text></svg>';const m=new Blob([JSON.stringify({name:'MASTER OF RANK',short_name:'MoR',display:'standalone',background_color:'#070b1a',theme_color:'#070b1a',start_url:location.href,icons:[{src:'data:image/svg+xml,'+encodeURIComponent(ic),sizes:'any',type:'image/svg+xml'}]})],{type:'application/manifest+json'});const l=document.createElement('link');l.rel='manifest';l.href=URL.createObjectURL(m);document.head.appendChild(l)}catch{}</script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={theme:{extend:{colors:{bg:'var(--bg)',card:'var(--card)',mute:'var(--mute)',volt:'#3b82f6',violet:'#8b5cf6'}}}}</script>
+<style>
+:root{--bg:#070b1a;--card:#101733;--ink:#e8ecff;--mute:#8b95c4}
+.light{--bg:#f1f4ff;--card:#fff;--ink:#0d1330;--mute:#5b6490}
+body{background:var(--bg);color:var(--ink);font-family:ui-rounded,'Segoe UI',system-ui,sans-serif;-webkit-tap-highlight-color:transparent}
+sup{font-size:.55em;vertical-align:.9em}
+button,input{touch-action:manipulation}button{min-height:44px}:focus-visible{outline:3px solid #8b5cf6;outline-offset:2px}#opts button,#stage{user-select:none;-webkit-user-select:none}
+.btn{transition:transform .08s}.btn:active{transform:scale(.96)}
+.shake{animation:shake .3s}.pop{animation:pop .3s}.pulse{animation:pulse .35s}.warn{animation:pulse 1s infinite}
+.rise{position:absolute;top:8px;font-weight:900;animation:rise .7s forwards;pointer-events:none}
+.rank{animation:rank .6s cubic-bezier(.2,1.4,.4,1)}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-14px)}40%{transform:translateX(14px)}60%{transform:translateX(-9px)}80%{transform:translateX(9px)}}
+@keyframes pop{50%{transform:scale(1.07)}}
+@keyframes pulse{50%{transform:scale(1.3)}}
+@keyframes rise{to{opacity:0;transform:translateY(-38px)}}
+@keyframes rank{from{transform:scale(.3);opacity:0}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important}}
+</style></head>
+<body><div id="app" class="min-h-screen max-w-xl mx-auto p-4"></div>
+<script>
+const r=(a,b)=>Math.floor(Math.random()*(b-a+1))+a,sh=a=>[...a].sort(()=>Math.random()-.5);
+const day=(d=new Date())=>d.toLocaleDateString('sv');
+/* ===== Generator soal ===== */
+const DIFFS=['Easy','Normal','Hard','Master'],MULT=[1,1.5,2,3];
+const CATS={pos:'Positive Base',neg:'Negative Base',odd:'Odd Exponent',even:'Even Exponent',sign:'Sign Recognition'};
+const MODES=['Cari Pangkat','Pangkat Negatif','Tebak Hasil','Positif atau Negatif?','Mixed Challenge'];
+const LIM=[256,2000,10000,50000],MB=[4,6,8,10],ME=[5,6,7,8];
+const fb=b=>b<0?`(${b})`:`${b}`,par=e=>e%2?'odd':'even';
+function pickBE(lv,neg){for(;;){const b=r(2,MB[lv]),e=r(2,ME[lv]);if(b**e<=LIM[lv])return{b:neg?-b:b,e}}}
+function opts(ans,pool){const s=new Set([ans]);for(const x of sh(pool)){if(s.size>=4)break;if(Number.isFinite(x)&&x!==ans)s.add(x)}let k=1;while(s.size<4)s.add(ans+k++);return sh([...s])}
+function make(m,lv){
+  const neg=m===1?true:m===0?false:m===3?Math.random()<.6:Math.random()<.4;
+  const{b,e}=pickBE(lv,neg),v=Math.pow(b,e),cats=[b<0?'neg':'pos',par(e),...(b<0&&e%2?['negodd']:[])],a=Math.abs(b);
+  const why=`${b<0?`Basis negatif, pangkat ${e} ${e%2?'ganjil → hasil negatif':'genap → hasil positif'}. `:''}${a}^${e} = ${a**e}, jadi ${fb(b)}^${e} = ${v}.`;
+  const base={m,cats,why};
+  if(m===3)return{...base,cats:[...cats,'sign'],parts:[fb(b),e,''],label:'Positif atau Negatif?',answer:v>0?'Positif':'Negatif',options:['Positif','Negatif']};
+  if(m===2)return{...base,parts:[fb(b),e,' = ?'],label:'Tebak hasilnya',answer:v,options:opts(v,[-v,b*e,Math.pow(b,e+1),Math.pow(b,e-1),v+b,-Math.pow(b,e-1)])};
+  return{...base,parts:[fb(b),'?',` = ${v}`],label:'Cari pangkatnya',answer:e,options:opts(e,[e+1,e-1,e+2,e-2,e+3].filter(x=>x>0))};
+}
+function gen(mode,lv,cat){for(let i=0;i<300;i++){const m=cat==='sign'?3:mode===4?r(0,3):mode,q=make(m,lv);if(!cat||q.cats.includes(cat))return q}return make(2,lv)}
+const check=(q,c)=>String(c)===String(q.answer);
+let ctx;const beep=ok=>{if(!S.settings.sound)return;try{ctx=ctx||new(window.AudioContext||window.webkitAudioContext)();const o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.frequency.value=ok?660:180;g.gain.value=.04;o.start();o.stop(ctx.currentTime+.09)}catch{}};
+/* ===== Progress ===== */
+const RANKS=['Beginner','Rookie','Solver','Challenger','Expert','Elite','Master','Grand Master','Math Legend'],T=[0,150,500,1200,2500,5000,9000,15000,25000];
+const rankOf=xp=>{let i=0;T.forEach((t,k)=>{if(xp>=t)i=k});const nx=T[i+1];return{i,name:RANKS[i],to:nx,pct:nx?(xp-T[i])/(nx-T[i]):1}};
+/* Rank score = XP x (0.7+0.3 x akurasi) x bonus kecepatan 5% (rata-rata <4 dtk) + bonus best streak (maks 200) + bonus volume soal (maks 200) */
+const eff=p=>{const a=p.answered?p.correct/p.answered:0,sp=p.answered&&p.time/p.answered<4?1.05:1;return Math.round(p.xp*(.7+.3*a)*sp+Math.min(p.bestStreak,50)*4+Math.min(p.answered,2000)*.1)};
+const mastery=c=>{if(!c||c.t<10)return'Novice';const a=c.c/c.t;return c.t>=30&&a>=.9?'Mastered':a>=.8?'Proficient':a>=.6?'Learning':'Needs Work'};
+const ACH=[
+ {id:'first',name:'Langkah Pertama',desc:'Selesaikan 1 sesi',ok:s=>s.player.sessions>=1},
+ {id:'s10',name:'On Fire',desc:'Streak 10 jawaban benar',ok:(s,x)=>x.best>=10},
+ {id:'c100',name:'Seratus Benar',desc:'100 jawaban benar total',ok:s=>s.player.correct>=100},
+ {id:'acc',name:'Sniper',desc:'Akurasi ≥90% (min. 10 soal)',ok:(s,x)=>x.n>=10&&x.acc>=.9},
+ {id:'sc',name:'Score Hunter',desc:'Skor 3000+ dalam 1 sesi',ok:(s,x)=>x.score>=3000},
+ {id:'d3',name:'Konsisten',desc:'Daily streak 3 hari',ok:s=>s.streak.n>=3},
+ {id:'rk',name:'Naik Kelas',desc:'Capai rank Solver',ok:s=>rankOf(eff(s.player)).i>=2}];
+function recs(){
+  const w=Object.entries(S.cat).filter(([k,v])=>CATS[k]&&v.t>=5).map(([k,v])=>[k,v.c/v.t]).sort((a,b)=>a[1]-b[1]);
+  if(!w.length)return[{text:'Main beberapa sesi dulu — rekomendasi personal muncul setelah ada cukup data.'}];
+  const out=[],[k,a]=w[0],h=S.history.slice(0,5),avg=h.length?h.reduce((x,y)=>x+y.avg,0)/h.length:0;
+  out.push(a<.9?{text:`Kamu lemah di ${CATS[k]} (${Math.round(a*100)}%) — latihan 20 soal.`,cat:k}:{text:'Akurasimu solid di semua kategori. Naikkan difficulty ke Hard atau Master!'});
+  const no=S.cat.negodd;if(no&&no.t>=5&&no.c/no.t<.75)out.unshift({text:`Kamu masih sering salah pada Negative Base dengan pangkat ganjil (${Math.round(no.c/no.t*100)}%). Latih 20 soal dulu.`,cat:'negodd'});
+  if(avg>6)out.push({text:`Rata-rata responmu ${avg.toFixed(1)} detik. Coba Easy 30 detik untuk melatih kecepatan.`});
+  return out;
+}
+/* ===== Store (localStorage) ===== */
+const KEY='master-of-rank-v1';
+const init=()=>({player:{name:'Player',xp:0,sessions:0,answered:0,correct:0,time:0,bestScore:0,bestStreak:0},cat:{},daily:{},history:[],ach:[],streak:{n:0,last:''},settings:{sound:true,light:false,goal:20,timer:60,seen:false}});
+let S;try{S={...init(),...JSON.parse(localStorage.getItem(KEY))}}catch{S=init()}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch{}};
+function finishSession(ss){const pb=ss.score>S.player.bestScore&&ss.score>0;if(!ss.log.length)return{xp:0,bonus:[],acc:0,avg:0,got:[],score:0,rankUp:false,rank:rankOf(eff(S.player)),pb:false};
+  const n=ss.log.length,c=ss.log.filter(x=>x.ok).length,acc=n?c/n:0,avg=n?ss.log.reduce((a,x)=>a+x.ms,0)/n/1000:0;
+  const today=day(),y=day(new Date(Date.now()-864e5)),first=S.streak.last!==today;
+  const st=first?{n:S.streak.last===y?S.streak.n+1:1,last:today}:S.streak,bonus=[];
+  if(n>=10&&c===n)bonus.push(['Perfect Session',50]);else if(n>=10&&acc>=.9)bonus.push(['High Accuracy',25]);
+  if(n>=10&&avg<3)bonus.push(['Speed Master',25]);
+  if(first)bonus.push(['Daily Streak',10*Math.min(st.n,7)]);
+  const xp=c*5+Math.floor(ss.score/50)+bonus.reduce((a,b)=>a+b[1],0),oldRank=rankOf(eff(S.player)).i;
+  ss.log.forEach(x=>x.q.cats.forEach(k=>{const o=S.cat[k]||{c:0,t:0};S.cat[k]={c:o.c+(x.ok?1:0),t:o.t+1}}));
+  const d=S.daily[today]||{xp:0,q:0,c:0},p=S.player;
+  S.daily[today]={xp:d.xp+xp,q:d.q+n,c:d.c+c};S.streak=st;
+  Object.assign(p,{xp:p.xp+xp,sessions:p.sessions+1,answered:p.answered+n,correct:p.correct+c,time:p.time+ss.dur,bestScore:Math.max(p.bestScore,ss.score),bestStreak:Math.max(p.bestStreak,ss.best)});
+  const rec={date:today,score:ss.score,n,c,acc,avg,best:ss.best,xp};
+  S.history=[rec,...S.history].slice(0,100);
+  const got=ACH.filter(a=>!S.ach.includes(a.id)&&a.ok(S,rec)).map(a=>a.id);S.ach.push(...got);save();
+  return{xp,bonus,acc,avg,got,score:ss.score,rankUp:rankOf(eff(p)).i>oldRank,rank:rankOf(eff(p)),pb};
+}
+/* ===== UI helpers ===== */
+const $=s=>document.querySelector(s),app=$('#app');
+const esc=s=>String(s).replace(/[&<>"']/g,c=>'&#'+c.charCodeAt(0)+';');
+const chip=(on,fn,t)=>`<button onclick="${fn}" class="rounded-xl px-3 py-2 text-sm font-semibold border ${on?'bg-volt border-volt text-white':'bg-card border-white/10 text-mute'}">${t}</button>`;
+const card=(h,c='')=>`<div class="bg-card rounded-2xl p-4 ${c}">${h}</div>`;
+const bar=(p,c='bg-gradient-to-r from-volt to-violet',id='')=>`<div class="h-2 rounded-full bg-white/10 overflow-hidden"><div ${id&&`id="${id}"`} class="h-full ${c} transition-all duration-300" style="width:${Math.round(Math.max(0,Math.min(1,p))*100)}%"></div></div>`;
+const btn=(fn,t,c='bg-card')=>`<button onclick="${fn}" class="btn rounded-2xl px-5 py-3 font-bold ${c}">${t}</button>`;
+const GRAD='bg-gradient-to-r from-volt to-violet text-white';
+const Q=(q,size='text-6xl')=>`<div class="${size} font-black tracking-tight">${q.parts[0]}<sup>${q.parts[1]}</sup>${q.parts[2]}</div>`;
+const back=(to='home')=>`<button onclick="go('${to}')" class="text-mute mb-4">← Kembali</button>`;
+let scr='home',ob=0,su={mode:4,diff:4,timer:S.settings.timer||60,custom:'',cat:null},RES,LOG=[],game=null;
+function go(x){if(scr==='game'&&x!=='game')clearInterval(game?.id);scr=x;document.documentElement.classList.toggle('light',S.settings.light);app.innerHTML=V[x]();if(x==='game')drawQ()}
+/* ===== Views ===== */
+const V={
+onboard(){const P=[['🎯','Selamat datang!','Jawab soal pangkat secepat mungkin. Makin cepat dan akurat, makin tinggi rank-mu.'],['⏱️','Time-attack','Pilih mode dan timer. Jawaban benar beruntun menaikkan combo sampai x5; salah berarti combo reset.'],['➖','Awas pangkat negatif!','(−2)³ = −8, tapi (−2)² = 4. Pangkat ganjil mempertahankan tanda negatif, pangkat genap membuatnya positif. Ini jebakan terbesar.'],['🏆','Naik rank','Kumpulkan XP, jaga streak harian, dan buka Review untuk belajar dari setiap kesalahan.']],p=P[ob];
+ return `<div class="min-h-[85vh] flex flex-col justify-center text-center space-y-5"><div class="text-7xl" aria-hidden="true">${p[0]}</div><h2 class="text-3xl font-black">${p[1]}</h2><p class="text-mute">${p[2]}</p>
+ <div class="flex justify-center gap-2" aria-hidden="true">${P.map((_,i)=>`<span class="h-2 w-2 rounded-full ${i===ob?'bg-volt':'bg-white/20'}"></span>`).join('')}</div>
+ ${btn(ob<3?"ob++;go('onboard')":"S.settings.seen=true;save();go('home')",ob<3?'Lanjut':'Mulai bermain',GRAD+' w-full')}
+ <button onclick="S.settings.seen=true;save();go('home')" class="text-mute">Lewati</button></div>`},
+home(){const p=S.player,rk=rankOf(eff(p)),t=S.daily[day()]||{q:0};return `<div class="space-y-4">
+ <div><h1 class="text-4xl font-black bg-gradient-to-r from-volt to-violet bg-clip-text text-transparent">MASTER OF RANK</h1><p class="text-mute">Siap menaklukkan pangkat?</p></div>
+ ${card(`<div class="flex justify-between items-end mb-2"><div><div class="text-mute text-sm">${esc(p.name)}</div><div class="text-2xl font-black">${rk.name}</div></div><div class="text-sm text-mute">${eff(p)}${rk.to?` / ${rk.to}`:''} Rank Score</div></div>${bar(rk.pct)}`)}
+ <div class="grid grid-cols-2 gap-3">
+  ${card(`<div>🔥</div><div class="text-2xl font-black">${S.streak.n} hari</div><div class="text-mute text-sm">Daily streak</div>`)}
+  ${card(`<div>🎯</div><div class="text-2xl font-black">${t.q}/${S.settings.goal}</div><div class="text-mute text-sm mb-2">Goal harian</div>${bar(t.q/S.settings.goal)}`)}</div>
+ ${btn("openSetup(false)",'▶ PLAY',GRAD+' w-full text-xl py-5')}
+ <div class="grid grid-cols-3 gap-3 text-sm">${btn("openSetup(true)",'Practice')}${btn("go('stats')",'Analytics')}${btn("go('settings')",'Settings')}</div></div>`},
+setup(){const pr=su.practice;return `<div class="space-y-5">${back()}<h2 class="text-2xl font-black">${pr?'Practice Mode':'Atur Pertandingan'}</h2>
+ ${pr?`<div><p class="text-mute mb-2">Kategori (tanpa timer)</p><div class="flex flex-wrap gap-2">${chip(!su.cat,"su.cat=null;go('setup')",'Semua')}${Object.entries(CATS).map(([k,v])=>chip(su.cat===k,`su.cat='${k}';go('setup')`,v)).join('')}</div></div>`
+ :`<div><p class="text-mute mb-2">Mode soal</p><div class="flex flex-wrap gap-2">${MODES.map((m,i)=>chip(su.mode===i,`su.mode=${i};go('setup')`,m)).join('')}</div></div>`}
+ <div><p class="text-mute mb-2">Difficulty</p><div class="flex flex-wrap gap-2">${[...DIFFS,'Adaptive'].map((d,i)=>chip(su.diff===i,`su.diff=${i};go('setup')`,d)).join('')}</div></div>
+ ${pr?'':`<div><p class="text-mute mb-2">Timer (detik)</p><div class="flex flex-wrap gap-2 items-center">${[30,60,120,180].map(t=>chip(!su.custom&&su.timer===t,`su.timer=${t};su.custom='';go('setup')`,t)).join('')}<input id="cust" value="${su.custom}" oninput="su.custom=this.value.replace(/\\D/g,'')" placeholder="Custom" class="w-24 rounded-xl bg-card px-3 py-2 text-sm border border-white/10"></div></div>`}
+ ${btn("startGame()",pr?'Mulai latihan':'Mulai!',GRAD+' w-full text-lg')}</div>`},
+game(){const pr=!game.cfg.timer;return `<div class="flex flex-col min-h-[92vh]">
+ <div class="flex justify-between text-sm text-mute"><span id="lvl"></span>${pr?`<button onclick="fin()" class="text-volt font-bold">Selesai</button>`:''}</div>
+ <div id="stage" class="flex-1 flex flex-col items-center justify-center relative"><p id="lab" class="text-mute mb-3"></p><div id="qbox"></div></div>
+ ${pr?'':`<div class="mb-3"><div class="text-sm mb-1"><span id="tnum" class="text-mute"></span></div>${bar(1,'bg-volt','tbar')}</div>`}
+ <div id="opts" class="grid grid-cols-2 gap-3"></div>
+ <div class="flex justify-between items-center mt-4"><div id="score" class="text-3xl font-black">0</div><div class="text-right"><div id="combo" class="font-black text-mute">x1</div><div id="streak" class="text-xs text-mute">Streak 0</div></div></div></div>`},
+result(){const x=RES,rc=recs();return `<div class="space-y-4 text-center">
+ ${x.rankUp?`<div class="rank rounded-2xl p-5 ${GRAD}"><div>🏆</div><div class="text-3xl font-black">Rank Up!</div><div>${x.rank.name}</div></div>`:''}
+ <h2 class="text-3xl font-black">SESSION COMPLETE!</h2>${x.pb?'<div class="text-emerald-400 font-bold">🏅 Personal Best baru!</div>':''}
+ <div class="grid grid-cols-3 gap-2">${[[x.score,'Skor'],[Math.round(x.acc*100)+'%','Akurasi'],[x.avg.toFixed(1)+'s','Rata-rata']].map(([a,b])=>card(`<div class="text-2xl font-black">${a}</div><div class="text-xs text-mute">${b}</div>`)).join('')}</div>
+ ${card(`<div class="font-bold mb-1">⚡ +${x.xp} XP</div>${x.bonus.map(([n,v])=>`<div class="text-sm text-mute flex justify-between"><span>${n}</span><span>+${v}</span></div>`).join('')}${x.got.length?`<div class="mt-2 text-sm text-violet">Badge baru: ${x.got.map(id=>ACH.find(a=>a.id===id).name).join(', ')}</div>`:''}`,'text-left')}
+ ${card(`<div class="font-bold mb-1">Rekomendasi</div>${rc.map(z=>`<div class="text-sm">${z.text}</div>`).join('')}`,'text-left space-y-1')}
+ <div class="grid grid-cols-2 gap-3">${btn("go('review')",'Review Jawaban')}${btn("go('stats')",'Analytics')}</div>
+ ${btn("startGame(game.cfg)",'Play Again',GRAD+' w-full')}<button onclick="go('home')" class="text-mute">Home</button></div>`},
+review(){return `<div class="space-y-3">${back('result')}<h2 class="text-2xl font-black">Review Jawaban</h2>${LOG.length?'':'<p class="text-mute">Belum ada jawaban.</p>'}
+ ${LOG.map(x=>card(`<div class="flex justify-between items-center">${Q(x.q,'text-2xl')}<span>${x.ok?'✅':'❌'}</span></div><div class="text-sm mt-1">Jawabanmu: <b>${x.choice}</b>${x.ok?'':` · Benar: <b>${x.q.answer}</b>`} · ${(x.ms/1000).toFixed(1)}s</div><div class="text-xs text-mute mt-1">${x.q.why}</div>`,`border-l-4 ${x.ok?'border-emerald-400':'border-rose-500'}`)).join('')}</div>`},
+stats(){const p=S.player,h=S.history,rc=recs();
+ const days=[...Array(7)].map((_,i)=>{const d=day(new Date(Date.now()-(6-i)*864e5));return{d:d.slice(5),xp:S.daily[d]?.xp||0}}),mx=Math.max(1,...days.map(d=>d.xp));
+ const avg=h.length?(h.reduce((a,x)=>a+x.avg,0)/h.length).toFixed(1)+'s':'-';
+ const items=[['Akurasi',p.answered?Math.round(p.correct/p.answered*100)+'%':'-'],['Rata-rata respon',avg],['Soal/menit',p.time?(p.answered/(p.time/60)).toFixed(1):'-'],['Best streak',p.bestStreak],['Best score',p.bestScore],['Sesi',p.sessions]];
+ return `<div class="space-y-4">${back()}<h2 class="text-2xl font-black">Analytics</h2>
+ <div class="grid grid-cols-3 gap-2">${items.map(([k,v])=>card(`<div class="text-xl font-black">${v}</div><div class="text-xs text-mute">${k}</div>`)).join('')}</div>
+ ${card(`<div class="font-bold mb-2">XP 7 hari terakhir</div><div class="flex items-end gap-2 h-36">${days.map(d=>`<div class="flex-1 flex flex-col items-center justify-end h-full gap-1"><span class="text-[10px] text-mute">${d.xp||''}</span><div class="w-full rounded-t-md bg-gradient-to-t from-volt to-violet transition-all" style="height:${Math.max(3,d.xp/mx*80)}%"></div><span class="text-[10px] text-mute">${d.d}</span></div>`).join('')}</div>`)}
+ ${card(`<div class="font-bold mb-2">Akurasi per kategori</div><div class="space-y-3">${Object.entries(CATS).map(([k,v])=>{const c=S.cat[k],a=c?c.c/c.t:0;return `<div><div class="flex justify-between text-sm"><span>${v}</span><span class="text-mute">${c?`${mastery(c)} · ${Math.round(a*100)}% (${c.t})`:'belum ada data'}</span></div>${bar(a)}</div>`}).join('')}</div>`)}
+ ${card(`<div class="font-bold mb-2">Rekomendasi</div>${rc.map(z=>`<div class="text-sm flex justify-between items-center gap-2 mb-1"><span>${z.text}</span>${z.cat?chip(true,`startGame({mode:4,diff:4,timer:0,cat:'${z.cat}'})`,'Latihan'):''}</div>`).join('')}`)}
+ ${card(`<div class="font-bold mb-2">Achievements</div><div class="grid grid-cols-2 gap-2">${ACH.map(a=>`<div class="rounded-xl p-2 text-sm ${S.ach.includes(a.id)?'bg-violet/30':'bg-white/5 opacity-50'}"><b>${a.name}</b><div class="text-xs text-mute">${a.desc}</div></div>`).join('')}</div>`)}</div>`},
+settings(){const s=S.settings,row=(l,c)=>`<div class="flex justify-between items-center py-2">${l}${c}</div>`;return `<div class="space-y-3">${back()}<h2 class="text-2xl font-black">Settings</h2>
+ ${card(row('Nama',`<input value="${esc(S.player.name)}" onchange="S.player.name=this.value||'Player';save()" class="bg-transparent text-right border-b border-white/20 w-32">`)
+ +row('Target harian (soal)',`<input type="number" min="5" value="${s.goal}" onchange="S.settings.goal=Math.max(5,+this.value||5);save()" class="bg-transparent text-right border-b border-white/20 w-20">`)
+ +row('Sound',chip(s.sound,"S.settings.sound=!S.settings.sound;save();go('settings')",s.sound?'On':'Off'))
+ +row('Timer default',`<span class="flex gap-1">${[30,60,120,180].map(t=>chip((s.timer||60)===t,`S.settings.timer=${t};su.timer=${t};su.custom='';save();go('settings')`,t)).join('')}</span>`)
+ +row('Tema',chip(s.light,"S.settings.light=!S.settings.light;save();go('settings')",s.light?'Light':'Dark')))}
+ ${btn("if(confirm('Hapus semua progress?')){S=init();save();go('home')}",'Reset Progress','bg-rose-600 text-white w-full')}</div>`}
+};
+function openSetup(p){su.practice=p;go('setup')}
+/* ===== Gameplay ===== */
+function startGame(c){
+  if(!c){const t=Number(su.custom)>0?Math.min(3600,Number(su.custom)):su.timer;c=su.practice?{mode:4,diff:su.diff,timer:0,cat:su.cat}:{mode:su.mode,diff:su.diff,timer:t,cat:null}}
+  game={cfg:c,lv:c.diff===4?0:c.diff,G:{score:0,streak:0,best:0,combo:1},log:[],wr:0,t0:Date.now(),qs:Date.now(),done:false};
+  game.q=gen(c.mode,game.lv,c.cat);go('game');
+  if(c.timer){const end=Date.now()+c.timer*1000;game.id=setInterval(()=>{const l=Math.max(0,(end-Date.now())/1000),t=$('#tnum'),b=$('#tbar');if(!t)return;
+    t.textContent=(l<10?'Waktu hampir habis! ':'')+Math.ceil(l)+'s';t.className=l<10?'text-rose-400 font-bold warn inline-block':'text-mute';
+    b.style.width=l/c.timer*100+'%';b.className=`h-full transition-all duration-300 ${l<10?'bg-rose-500':'bg-volt'}`;if(l<=0)fin()},100)}
+}
+function drawQ(){const g=game;$('#lvl').textContent=g.cfg.diff===4?`Adaptive · ${DIFFS[g.lv]}`:DIFFS[g.lv];$('#lab').textContent=g.q.label;$('#qbox').innerHTML=Q(g.q);
+  $('#opts').innerHTML=g.q.options.map((o,i)=>`<button onclick="ans(${i})" class="btn bg-card border border-white/10 rounded-2xl text-2xl py-6 font-bold"><span class="text-xs text-mute mr-2 hidden md:inline">${i+1}</span>${o}</button>`).join('');
+  g.qs=Date.now();const t=$('#tnum');if(t&&!t.textContent)t.textContent=g.cfg.timer+'s'}
+function anim(el,c){el.classList.remove(c);void el.offsetWidth;el.classList.add(c)}
+/* Skor = (100 x pengali level x (1 + bonus kecepatan maks 50%, linear sampai batas waktu level) + bonus streak maks 25) x combo */
+const TL=[6000,8000,10000,12000];
+const score=(lv,ms,st,cb)=>Math.round((100*MULT[lv]*(1+.5*Math.max(0,1-ms/TL[lv]))+Math.min(st,10)*2.5)*cb);
+/* Adaptive: jendela 8 jawaban terakhir; naik jika akurasi>=85% dan rata-rata waktu <=60% batas; turun jika akurasi<=50%; jeda minimal 5 jawaban */
+function adapt(g,ok,ms){g.win=[...(g.win||[]),{ok,ms}].slice(-8);g.cd=(g.cd||0)+1;if(g.win.length<6||g.cd<5)return;
+  const a=g.win.filter(w=>w.ok).length/g.win.length,t=g.win.reduce((q,w)=>q+w.ms,0)/g.win.length;
+  if(a>=.85&&t<=TL[g.lv]*.6&&g.lv<3){g.lv++;g.win=[];g.cd=0}else if(a<=.5&&g.lv>0){g.lv--;g.win=[];g.cd=0}}
+function ans(i){
+  const g=game;if(!g||g.done||scr!=='game')return;const c=g.q.options[i],ms=Date.now()-g.qs,ok=check(g.q,c),x=g.G;let pts=0;
+  if(ok){x.streak++;x.best=Math.max(x.best,x.streak);const oc=x.combo;x.combo=Math.min(5,1+Math.floor(x.streak/3));
+    pts=score(g.lv,ms,x.streak,x.combo);x.score+=pts;if(x.combo>oc)anim($('#combo'),'pulse')}
+  else{x.streak=0;x.combo=1}
+  g.log.push({q:g.q,choice:c,ok,ms});if(g.cfg.diff===4)adapt(g,ok,ms);beep(ok);
+  $('#score').textContent=x.score;const cb=$('#combo');cb.textContent=x.combo>1?`COMBO x${x.combo}!`:'x1';cb.className='font-black '+(x.combo>1?'text-violet':'text-mute');$('#streak').textContent='Streak '+x.streak;
+  const pop=document.createElement('div');pop.setAttribute('role','status');pop.className='rise '+(ok?'text-emerald-400':'text-rose-500');pop.textContent=ok?`CORRECT! +${pts} XP`:'WRONG!';$('#stage').appendChild(pop);setTimeout(()=>pop.remove(),700);
+  g.q=gen(g.cfg.mode,g.lv,g.cfg.cat);drawQ();anim($('#qbox'),ok?'pop':'shake');
+}
+function fin(){const g=game;if(!g||g.done)return;g.done=true;clearInterval(g.id);LOG=g.log;
+  RES=finishSession({log:g.log,score:g.G.score,best:g.G.best,dur:Math.round((Date.now()-g.t0)/1000)});go('result')}
+addEventListener('keydown',e=>{if(scr==='game'&&!/INPUT/.test(e.target.tagName)){const i=+e.key-1;if(game.q.options[i]!==undefined)ans(i)}});
+go(S.settings.seen?'home':'onboard');
+</script></body></html>
